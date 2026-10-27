@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Feed estilo Instagram</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <span class="logo">Instagram</span>
+  <span style="display:flex">
+    <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>
+  </span>
+</header>
+<div class="stories" id="stories"></div>
+<main id="feed"></main>
+<nav>
+  <svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10h-6v-6H9v6H3z"/></svg>
+  <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-5-5"/></svg>
+  <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>
+  <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m10 8 6 4-6 4z"/></svg>
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+</nav>
+<script>
+/* Para usar suas mídias, preencha src com o caminho do arquivo (ex.: "fotos/1.jpg" ou "videos/1.mp4").
+   type: "foto" ou "video". Há exatamente 26 posts. */
+var TOTAL = 26;
+var users = ["milov","meu_bem","deba","paixão","ga.tinha","amor_da_minha_vida","magica.cp","SeTuQuiser_ocant","MadeInJapan","rzo_d_saudade","gata_dlc_mnamora","casa.cu.migo","te.lovo_"];
+var caps = ["O motivo de eu querer ser alguém melhor! 🌟 #gratiluz",
+"Quando te encontrei, te juro, não pensei, que iria me apaixonar. 💘",
+"Minha felicidade.",
+"Com quem eu quero me casar. 💍",
+"A mulher mais linda do mundo<3 ✨",
+"A pessoa com o maior coração que eu conheço.",
+"Vou dar choque no cu, vou dar choque no cu. 🥺",
+"Uma mulher forte, que merece o mundo! 🌍",
+"Por cause de você, eu aprendi a amar, o simples estar na sala de estar.",
+"Não sei mais viver sem você. 😍",
+"Te quero demais, minha flor!",
+"Eu estou pensando em você. Pensando em nunca mais. Pensar em te esquecer.",
+"O meu maior motivo de orgulho.",
+"Eu tenho certeza que você vai alcançar todos os seus sonhos. 🌠",
+"O amor se fez, me levando além.",
+"A pessoa com quem eu espero passar o resto da vida.",
+"Se eu moresse aqui pertinho nega, todo dia eu vinha te ver.",
+"Você tem um futuro lindo pela frente.",
+"Quero te ver de branco. 🤍",
+"Essa paixão me tece em todas estações.",
+"É você, só você.",
+"Você é muito amada e nunca pense o contrário.",
+"Lembre que pode sempre contar comigo, eu quero estar sempre do seu lado.",
+"Sou totalmente seu.",
+"Meu amor, eu te amo mais que tudo. ❤️",
+"Feliz aniversário, meu bem. 🎂"
+];
+var grads = [["#feda75","#d62976"],["#4f5bd5","#962fbf"],["#0ba360","#3cba92"],["#fa709a","#fee140"],["#30cfd0","#330867"],["#f6d365","#fda085"],["#a18cd1","#fbc2eb"],["#ff9a9e","#fecfef"]];
+var MEDIA = [];
+/* ratio só afeta os placeholders; com src preenchido, o espaço assume a proporção real da imagem/vídeo */
+var ratios = ["1/1", "16/9", "3/4", "4/5", "4/3"];
+var VIDEOS = [2, 8, 20, 21, 23]; /* números dos posts que são vídeos (.mp4); os demais são fotos (.jpg) */
+for (var i = 0; i < TOTAL; i++) {
+  var n = i + 1, isVideo = VIDEOS.indexOf(n) !== -1;
+  MEDIA.push({ type: isVideo ? "video" : "foto", src: "imagens/" + n + (isVideo ? ".mp4" : ".jpg"), ratio: ratios[i % ratios.length] });
+}
+
+var state = { likes: {}, saved: {} };
+try { var s = JSON.parse(localStorage.getItem("igfeed") || "null"); if (s) state = s; } catch (e) {}
+function save() { try { localStorage.setItem("igfeed", JSON.stringify(state)); } catch (e) {} }
+
+var heart = '<svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg>';
+var icons = {
+  com: '<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.7 7L3 21l2-5.5A8 8 0 1 1 21 12z"/></svg>',
+  env: '<svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>',
+  sav: '<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-5-6 5z"/></svg>'
+};
+
+function fmt(n) { return n >= 1000 ? (n / 1000).toFixed(1).replace(".", ",") + " mil" : String(n); }
+function esc(t) { return t.replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
+
+var feed = document.getElementById("feed");
+var data = [];
+for (var k = 0; k < TOTAL; k++) {
+  var g = grads[k % grads.length];
+  data.push({ id: k, user: users[k % users.length], cap: caps[k % caps.length], base: 40 + (k * 137) % 900, com: 3 + (k * 7) % 60, g: g, m: MEDIA[k], h: 1 + (k * 5) % 23 });
+}
+
+function mediaHTML(p) {
+  var tag = p.m.type === "video" ? "▶ Vídeo" : "Foto";
+  var inner;
+  if (p.m.src && p.m.type === "video") inner = '<video src="' + p.m.src + '" playsinline muted loop controls preload="metadata"></video>';
+  else if (p.m.src) inner = '<img src="' + p.m.src + '" alt="Post ' + (p.id + 1) + '" loading="lazy">';
+  else {
+    var ic = p.m.type === "video" ? '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m10 8 6 4-6 4z"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="4"/></svg>';
+    inner = '<div class="ph" style="aspect-ratio:' + p.m.ratio + ';background:linear-gradient(135deg,' + p.g[0] + ',' + p.g[1] + ')"><div>' + ic + (p.m.type === "video" ? "Vídeo" : "Foto") + ' ' + p.m.ratio.replace("/", ":") + '</div></div>';
+  }
+  return inner + '<span class="tag">' + tag + '</span><svg class="pop" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg>';
+}
+
+function render() {
+  var html = "";
+  data.forEach(function (p) {
+    var long = p.cap.length > 80;
+    var shown = long ? esc(p.cap.slice(0, 80)) + '… <span class="more">mais</span>' : esc(p.cap);
+    html += '<article data-id="' + p.id + '">' +
+      '<div class="top"><div class="av" style="background:linear-gradient(135deg,' + p.g[0] + ',' + p.g[1] + ')"></div><div><b>' + p.user + '</b><small>Juazeiro do Norte</small></div><span class="dots">•••</span></div>' +
+      '<div class="media">' + mediaHTML(p) + '</div>' +
+      '<div class="act"><button class="like" aria-label="Curtir">' + heart + '</button><button aria-label="Comentar">' + icons.com + '</button><button aria-label="Enviar">' + icons.env + '</button><button class="sv" aria-label="Salvar">' + icons.sav + '</button></div>' +
+      '<div class="info"><b class="lk"></b><div class="cap"><b>' + p.user + '</b> <span class="ct" data-full="' + esc(p.cap) + '">' + shown + '</span></div>' +
+      '<div class="cm">Ver todos os ' + p.com + ' comentários</div><div class="time">há ' + p.h + ' horas</div></div></article>';
+  });
+  feed.innerHTML = html;
+  data.forEach(function (p) { update(p.id); });
+}
+
+function update(id) {
+  var a = feed.children[id], p = data[id], on = !!state.likes[id];
+  a.querySelector(".like").classList.toggle("on", on);
+  a.querySelector(".sv").classList.toggle("on", !!state.saved[id]);
+  a.querySelector(".lk").textContent = fmt(p.base + (on ? 1 : 0)) + " curtidas";
+}
+
+function toggleLike(id, force) {
+  var on = force ? true : !state.likes[id];
+  if (on) state.likes[id] = 1; else delete state.likes[id];
+  save(); update(id);
+}
+
+var lastTap = {};
+feed.addEventListener("click", function (e) {
+  var a = e.target.closest("article"); if (!a) return;
+  var id = +a.dataset.id;
+  if (e.target.closest(".like")) return toggleLike(id);
+  if (e.target.closest(".sv")) { if (state.saved[id]) delete state.saved[id]; else state.saved[id] = 1; save(); return update(id); }
+  if (e.target.classList.contains("more")) { var ct = a.querySelector(".ct"); ct.textContent = ct.dataset.full; return; }
+  if (e.target.closest(".media") && e.target.tagName !== "VIDEO") {
+    var now = Date.now();
+    if (lastTap[id] && now - lastTap[id] < 350) {
+      toggleLike(id, true);
+      var pop = a.querySelector(".pop"); pop.classList.add("on");
+      setTimeout(function () { pop.classList.remove("on"); }, 600);
+      lastTap[id] = 0;
+    } else lastTap[id] = now;
+  }
+});
+
+var st = "";
+users.slice(0, 9).forEach(function (u, i) {
+  var g = grads[i % grads.length];
+  st += '<div class="st"><div class="ring"><i style="background:linear-gradient(135deg,' + g[0] + ',' + g[1] + ')"></i></div>' + u.slice(0, 9) + '</div>';
+});
+document.getElementById("stories").innerHTML = st;
+render();
+</script>
+</body>
+</html>
