@@ -6,6 +6,12 @@
 <title>Perfil</title>
 <link rel="stylesheet" href="perfil.css">
 </head>
+
+<div id="lb" hidden>
+  <button id="lbX" aria-label="Fechar">✕</button>
+  <div id="lbBox"></div>
+</div>
+
 <body>
 
 <div class="pbar">
@@ -88,6 +94,29 @@ document.getElementById("tabs").addEventListener("click", function (e) {
   document.querySelectorAll(".gi").forEach(function (g) {
     g.hidden = t.dataset.t === "video" && g.dataset.type !== "video";
   });
+});
+var lb = document.getElementById("lb"), box = document.getElementById("lbBox");
+
+function abrir(el) {
+  var c = el.cloneNode(true);
+  if (c.tagName === "VIDEO") {
+    c.removeAttribute("muted");
+    c.muted = false;
+    c.controls = true;
+    c.autoplay = true;
+    c.src = c.src.split("#")[0];
+  }
+  box.innerHTML = "";
+  box.appendChild(c);
+  lb.hidden = false;
+}
+function fechar() { box.innerHTML = ""; lb.hidden = true; }
+
+document.getElementById("lbX").addEventListener("click", fechar);
+lb.addEventListener("click", function (e) { if (e.target === lb) fechar(); });
+document.querySelector(".grid").addEventListener("click", function (e) {
+  var g = e.target.closest(".gi"); if (!g) return;
+  abrir(g.querySelector("img, video"));
 });
 </script>
 </body>
